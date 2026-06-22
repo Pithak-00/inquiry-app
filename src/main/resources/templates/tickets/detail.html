@@ -135,6 +135,7 @@
               <option value="">選択してください</option>
               <option th:each="s : ${statuses}"
                       th:value="${s.name()}"
+                      th:selected="${s == ticket.status}"
                       th:text="${s.name() == 'NEW'         ? '新規'    :
                                  s.name() == 'IN_PROGRESS' ? '対応中'  :
                                  s.name() == 'RESOLVED'    ? '解決済み' : 'クローズ'}">
