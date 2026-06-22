@@ -60,19 +60,15 @@
         <dl class="ticket-meta" style="margin-top:1rem;">
           <div><dt>ステータス</dt><dd>
             <span th:class="'badge badge-' + ${#strings.toLowerCase(#strings.replace(ticket.status.name(), '_', '-'))}"
-                  th:switch="${ticket.status}">
-              <span th:case="'NEW'">新規</span>
-              <span th:case="'IN_PROGRESS'">対応中</span>
-              <span th:case="'RESOLVED'">解決済み</span>
-              <span th:case="'CLOSED'">クローズ</span>
+                  th:text="${ticket.status.name() == 'NEW'         ? '新規'    :
+                             ticket.status.name() == 'IN_PROGRESS' ? '対応中'  :
+                             ticket.status.name() == 'RESOLVED'    ? '解決済み' : 'クローズ'}">
             </span>
           </dd></div>
           <div><dt>優先度</dt><dd>
             <span th:class="'badge badge-' + ${#strings.toLowerCase(ticket.priority.name())}"
-                  th:switch="${ticket.priority}">
-              <span th:case="'HIGH'">高</span>
-              <span th:case="'MEDIUM'">中</span>
-              <span th:case="'LOW'">低</span>
+                  th:text="${ticket.priority.name() == 'HIGH' ? '高' :
+                             ticket.priority.name() == 'MEDIUM' ? '中' : '低'}">
             </span>
           </dd></div>
           <div><dt>カテゴリ</dt><dd th:text="${ticket.categoryName != null ? ticket.categoryName : '-'}"></dd></div>
@@ -137,11 +133,11 @@
           <div class="form-group">
             <select name="toStatus" class="form-control">
               <option value="">選択してください</option>
-              <option th:each="s : ${statuses}" th:value="${s}" th:switch="${s}">
-                <span th:case="'NEW'">新規</span>
-                <span th:case="'IN_PROGRESS'">対応中</span>
-                <span th:case="'RESOLVED'">解決済み</span>
-                <span th:case="'CLOSED'">クローズ</span>
+              <option th:each="s : ${statuses}"
+                      th:value="${s.name()}"
+                      th:text="${s.name() == 'NEW'         ? '新規'    :
+                                 s.name() == 'IN_PROGRESS' ? '対応中'  :
+                                 s.name() == 'RESOLVED'    ? '解決済み' : 'クローズ'}">
               </option>
             </select>
           </div>
@@ -158,9 +154,14 @@
               <div style="font-size:12px; color:var(--gray-600);"
                    th:text="${#temporals.format(log.changedAt, 'yyyy/MM/dd HH:mm')}"></div>
               <div style="font-size:13px;">
-                <span th:text="${log.fromStatus != null ? log.fromStatus : '—'}"></span>
+                <span th:text="${log.fromStatus == null ? '—' :
+                                 log.fromStatus.name() == 'NEW'         ? '新規'    :
+                                 log.fromStatus.name() == 'IN_PROGRESS' ? '対応中'  :
+                                 log.fromStatus.name() == 'RESOLVED'    ? '解決済み' : 'クローズ'}"></span>
                 <span class="log-arrow">→</span>
-                <strong th:text="${log.toStatus}"></strong>
+                <strong th:text="${log.toStatus.name() == 'NEW'         ? '新規'    :
+                                   log.toStatus.name() == 'IN_PROGRESS' ? '対応中'  :
+                                   log.toStatus.name() == 'RESOLVED'    ? '解決済み' : 'クローズ'}"></strong>
               </div>
               <div style="font-size:12px; color:var(--gray-600);" th:text="${log.changedBy.name}"></div>
             </div>

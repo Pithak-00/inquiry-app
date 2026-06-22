@@ -1,6 +1,7 @@
 package com.example.inquiry.controller;
 
 import com.example.inquiry.dto.StatusChangeForm;
+import com.example.inquiry.entity.Ticket.TicketStatus;
 import com.example.inquiry.entity.User;
 import com.example.inquiry.security.CustomUserDetails;
 import com.example.inquiry.service.TicketService;
@@ -42,12 +43,23 @@ public class AdminTicketController {
         try {
             ticketService.changeStatus(id, form.getToStatus(), admin);
             redirectAttributes.addFlashAttribute("successMessage",
-                "ステータスを「" + form.getToStatus() + "」に変更しました");
+                "ステータスを「" + statusLabel(form.getToStatus()) + "」に変更しました");
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 
         return "redirect:/tickets/" + id;
+    }
+
+    // ===== ステータス日本語変換 =====
+    private static String statusLabel(TicketStatus status) {
+        switch (status) {
+            case NEW:         return "新規";
+            case IN_PROGRESS: return "対応中";
+            case RESOLVED:    return "解決済み";
+            case CLOSED:      return "クローズ";
+            default:          return status.name();
+        }
     }
 
     // ===== 論理削除 =====

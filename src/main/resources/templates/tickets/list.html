@@ -47,14 +47,20 @@
         <label class="form-label">ステータス</label>
         <select name="status" class="form-control">
           <option value="">すべて</option>
-          <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${form.status == s}"></option>
+          <option th:each="s : ${statuses}" th:value="${s}"
+                  th:text="${s.name() == 'NEW'         ? '新規'    :
+                             s.name() == 'IN_PROGRESS' ? '対応中'  :
+                             s.name() == 'RESOLVED'    ? '解決済み' : 'クローズ'}"
+                  th:selected="${form.status == s}"></option>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">優先度</label>
         <select name="priority" class="form-control">
           <option value="">すべて</option>
-          <option th:each="p : ${priorities}" th:value="${p}" th:text="${p}" th:selected="${form.priority == p}"></option>
+          <option th:each="p : ${priorities}" th:value="${p}"
+                  th:text="${p.name() == 'HIGH' ? '高' : p.name() == 'MEDIUM' ? '中' : '低'}"
+                  th:selected="${form.priority == p}"></option>
         </select>
       </div>
       <div class="form-group">
@@ -105,19 +111,15 @@
             </td>
             <td>
               <span th:class="'badge badge-' + ${#strings.toLowerCase(#strings.replace(ticket.status.name(), '_', '-'))}"
-                    th:switch="${ticket.status}">
-                <span th:case="'NEW'">新規</span>
-                <span th:case="'IN_PROGRESS'">対応中</span>
-                <span th:case="'RESOLVED'">解決済み</span>
-                <span th:case="'CLOSED'">クローズ</span>
+                    th:text="${ticket.status.name() == 'NEW'         ? '新規'    :
+                               ticket.status.name() == 'IN_PROGRESS' ? '対応中'  :
+                               ticket.status.name() == 'RESOLVED'    ? '解決済み' : 'クローズ'}">
               </span>
             </td>
             <td>
               <span th:class="'badge badge-' + ${#strings.toLowerCase(ticket.priority.name())}"
-                    th:switch="${ticket.priority}">
-                <span th:case="'HIGH'">高</span>
-                <span th:case="'MEDIUM'">中</span>
-                <span th:case="'LOW'">低</span>
+                    th:text="${ticket.priority.name() == 'HIGH' ? '高' :
+                               ticket.priority.name() == 'MEDIUM' ? '中' : '低'}">
               </span>
             </td>
             <td th:text="${ticket.category != null ? ticket.category.name : '-'}"></td>
