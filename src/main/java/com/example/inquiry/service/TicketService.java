@@ -11,7 +11,9 @@ import com.example.inquiry.validator.TicketStatusTransitionValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import com.example.inquiry.repository.TicketSpecification;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,24 +105,28 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public Page<Ticket> search(TicketSearchForm form, Long loginUserId, boolean isAdmin) {
-        Pageable pageable = PageRequest.of(form.getPage(), pageSize);
+        Pageable pageable = PageRequest.of(
+            form.getPage(), pageSize, Sort.by(Sort.Direction.DESC, "createdAt")
+        );
         LocalDateTime dateFrom = form.getDateFrom() != null ? form.getDateFrom().atStartOfDay() : null;
         LocalDateTime dateTo   = form.getDateTo()   != null ? form.getDateTo().plusDays(1).atStartOfDay() : null;
 
-        // LIKE句のためにワイルドカードを付与（nullの場合はnullのまま）
-        String keyword = (form.getKeyword() != null && !form.getKeyword().isBlank())
-            ? "%" + form.getKeyword() + "%"
-            : null;
+        // 条件を動的に組み立て（null は自動的に無視される）
+        Specification<Ticket> spec = Specification
+            .where(TicketSpecification.notDeleted())
+            .and(TicketSpecification.keywordLike(form.getKeyword()))
+            .and(TicketSpecification.byStatus(form.getStatus()))
+            .and(TicketSpecification.byPriority(form.getPriority()))
+            .and(TicketSpecification.byCategoryId(form.getCategoryId()))
+            .and(TicketSpecification.createdAfter(dateFrom))
+            .and(TicketSpecification.createdBefore(dateTo));
 
-        if (isAdmin) {
-            return ticketRepository.searchAll(
-                keyword, form.getStatus(), form.getPriority(), form.getCategoryId(), dateFrom, dateTo, pageable
-            );
-        } else {
-            return ticketRepository.searchByUser(
-                loginUserId, keyword, form.getStatus(), form.getPriority(), form.getCategoryId(), dateFrom, dateTo, pageable
-            );
+        // 一般ユーザーは自分のチケットのみ
+        if (!isAdmin) {
+            spec = spec.and(TicketSpecification.byUser(loginUserId));
         }
+
+        return ticketRepository.findAll(spec, pageable);
     }
 
     @Transactional
