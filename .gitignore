@@ -1,0 +1,28 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# アップロードファイル（本番はRenderの/tmpに保存されるため不要）
+uploads/
+
+# ログ
+*.log
+logs/
+
+# 環境設定（シークレットを含む可能性があるため）
+# application-prod.properties は公開しても問題ない（env変数参照のみ）

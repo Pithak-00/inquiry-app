@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>チケット一覧 - 問い合わせ管理システム</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <a th:href="@{/tickets}" class="site-title">問い合わせ管理システム</a>
+    <nav class="header-nav">
+      <span class="user-info">
+        <span sec:authentication="principal.displayName"></span>
+        <span class="badge-role" sec:authorize="hasRole('ADMIN')">管理者</span>
+        <span class="badge-role badge-user" sec:authorize="hasRole('USER')">ユーザー</span>
+      </span>
+      <a th:href="@{/tickets/new}" class="btn btn-primary btn-sm">＋ 新規チケット</a>
+      <form th:action="@{/logout}" method="post" style="display:inline">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-ghost btn-sm">ログアウト</button>
+      </form>
+    </nav>
+  </div>
+</header>
+
+<main class="main-content">
+  <div class="page-header">
+    <h1 class="page-title">チケット一覧</h1>
+    <span style="color:var(--gray-600); font-size:13px;">全 <strong th:text="${page.totalElements}">0</strong> 件</span>
+  </div>
+
+  <!-- フラッシュメッセージ -->
+  <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+  <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+  <!-- 検索フォーム -->
+  <div class="card">
+    <form th:action="@{/tickets}" method="get" class="search-form">
+      <div class="form-group">
+        <label class="form-label">キーワード</label>
+        <input type="text" name="keyword" class="form-control" th:value="${form.keyword}" placeholder="タイトル・本文"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ステータス</label>
+        <select name="status" class="form-control">
+          <option value="">すべて</option>
+          <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${form.status == s}"></option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">優先度</label>
+        <select name="priority" class="form-control">
+          <option value="">すべて</option>
+          <option th:each="p : ${priorities}" th:value="${p}" th:text="${p}" th:selected="${form.priority == p}"></option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">カテゴリ</label>
+        <select name="categoryId" class="form-control">
+          <option value="">すべて</option>
+          <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}" th:selected="${form.categoryId == c.id}"></option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">作成日（From）</label>
+        <input type="date" name="dateFrom" class="form-control" th:value="${form.dateFrom}"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">作成日（To）</label>
+        <input type="date" name="dateTo" class="form-control" th:value="${form.dateTo}"/>
+      </div>
+      <button type="submit" class="btn btn-primary">検索</button>
+      <a th:href="@{/tickets}" class="btn btn-secondary">クリア</a>
+    </form>
+  </div>
+
+  <!-- チケット一覧テーブル -->
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>タイトル</th>
+            <th>ステータス</th>
+            <th>優先度</th>
+            <th>カテゴリ</th>
+            <th sec:authorize="hasRole('ADMIN')">作成者</th>
+            <th>作成日</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${page.empty}">
+            <td colspan="7" style="text-align:center; color:var(--gray-400); padding:2rem;">
+              チケットがありません
+            </td>
+          </tr>
+          <tr th:each="ticket : ${page.content}">
+            <td th:text="'#' + ${ticket.id}" style="color:var(--gray-400); font-size:13px;"></td>
+            <td>
+              <a th:href="@{/tickets/{id}(id=${ticket.id})}" class="table-link" th:text="${ticket.title}"></a>
+            </td>
+            <td>
+              <span th:class="'badge badge-' + ${#strings.toLowerCase(#strings.replace(ticket.status.name(), '_', '-'))}"
+                    th:switch="${ticket.status}">
+                <span th:case="'NEW'">新規</span>
+                <span th:case="'IN_PROGRESS'">対応中</span>
+                <span th:case="'RESOLVED'">解決済み</span>
+                <span th:case="'CLOSED'">クローズ</span>
+              </span>
+            </td>
+            <td>
+              <span th:class="'badge badge-' + ${#strings.toLowerCase(ticket.priority.name())}"
+                    th:switch="${ticket.priority}">
+                <span th:case="'HIGH'">高</span>
+                <span th:case="'MEDIUM'">中</span>
+                <span th:case="'LOW'">低</span>
+              </span>
+            </td>
+            <td th:text="${ticket.category != null ? ticket.category.name : '-'}"></td>
+            <td sec:authorize="hasRole('ADMIN')" th:text="${ticket.user.name}"></td>
+            <td th:text="${#temporals.format(ticket.createdAt, 'yyyy/MM/dd')}"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ページネーション -->
+  <nav class="pagination" th:if="${page.totalPages > 1}">
+    <span class="page-item" th:classappend="${page.first} ? 'disabled'">
+      <a th:href="${page.first} ? '#' : @{/tickets(page=${page.number - 1}, keyword=${form.keyword}, status=${form.status}, priority=${form.priority}, categoryId=${form.categoryId})}">«</a>
+    </span>
+    <span th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+          class="page-item" th:classappend="${i == page.number} ? 'active'">
+      <a th:href="@{/tickets(page=${i}, keyword=${form.keyword}, status=${form.status}, priority=${form.priority}, categoryId=${form.categoryId})}"
+         th:text="${i + 1}"></a>
+    </span>
+    <span class="page-item" th:classappend="${page.last} ? 'disabled'">
+      <a th:href="${page.last} ? '#' : @{/tickets(page=${page.number + 1}, keyword=${form.keyword}, status=${form.status}, priority=${form.priority}, categoryId=${form.categoryId})}">»</a>
+    </span>
+  </nav>
+</main>
+
+</body>
+</html>

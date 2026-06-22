@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="'#' + ${ticket.id} + ' ' + ${ticket.title} + ' - 問い合わせ管理システム'">チケット詳細</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <a th:href="@{/tickets}" class="site-title">問い合わせ管理システム</a>
+    <nav class="header-nav">
+      <span class="user-info">
+        <span sec:authentication="principal.displayName"></span>
+        <span class="badge-role" sec:authorize="hasRole('ADMIN')">管理者</span>
+        <span class="badge-role badge-user" sec:authorize="hasRole('USER')">ユーザー</span>
+      </span>
+      <a th:href="@{/tickets/new}" class="btn btn-primary btn-sm">＋ 新規チケット</a>
+      <form th:action="@{/logout}" method="post" style="display:inline">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-ghost btn-sm">ログアウト</button>
+      </form>
+    </nav>
+  </div>
+</header>
+
+<main class="main-content">
+  <!-- パンくず -->
+  <div style="margin-bottom:.75rem; font-size:13px; color:var(--gray-600);">
+    <a th:href="@{/tickets}" style="color:var(--primary);">チケット一覧</a> &rsaquo;
+    <span th:text="'#' + ${ticket.id} + ' ' + ${ticket.title}"></span>
+  </div>
+
+  <!-- フラッシュ -->
+  <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+  <div th:if="${errorMessage}"   class="alert alert-danger"  th:text="${errorMessage}"></div>
+  <div th:if="${commentError}"   class="alert alert-warning" th:text="${commentError}"></div>
+
+  <div style="display:grid; grid-template-columns:1fr 320px; gap:1rem;">
+    <!-- 左カラム: チケット詳細 -->
+    <div>
+      <!-- チケット情報 -->
+      <div class="card">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;">
+          <h1 style="font-size:20px; font-weight:700; line-height:1.4;" th:text="${ticket.title}"></h1>
+          <div style="display:flex; gap:.5rem; flex-shrink:0;">
+            <a th:if="${ticket.editable}" th:href="@{/tickets/{id}/edit(id=${ticket.id})}"
+               class="btn btn-secondary btn-sm">編集</a>
+            <form th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
+                  th:action="@{/admin/tickets/{id}/delete(id=${ticket.id})}" method="post"
+                  onsubmit="return confirm('このチケットを削除しますか？')">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button type="submit" class="btn btn-danger btn-sm">削除</button>
+            </form>
+          </div>
+        </div>
+
+        <dl class="ticket-meta" style="margin-top:1rem;">
+          <div><dt>ステータス</dt><dd>
+            <span th:class="'badge badge-' + ${#strings.toLowerCase(#strings.replace(ticket.status.name(), '_', '-'))}"
+                  th:switch="${ticket.status}">
+              <span th:case="'NEW'">新規</span>
+              <span th:case="'IN_PROGRESS'">対応中</span>
+              <span th:case="'RESOLVED'">解決済み</span>
+              <span th:case="'CLOSED'">クローズ</span>
+            </span>
+          </dd></div>
+          <div><dt>優先度</dt><dd>
+            <span th:class="'badge badge-' + ${#strings.toLowerCase(ticket.priority.name())}"
+                  th:switch="${ticket.priority}">
+              <span th:case="'HIGH'">高</span>
+              <span th:case="'MEDIUM'">中</span>
+              <span th:case="'LOW'">低</span>
+            </span>
+          </dd></div>
+          <div><dt>カテゴリ</dt><dd th:text="${ticket.categoryName != null ? ticket.categoryName : '-'}"></dd></div>
+          <div><dt>作成者</dt><dd th:text="${ticket.ownerName}"></dd></div>
+          <div><dt>作成日時</dt><dd th:text="${#temporals.format(ticket.createdAt, 'yyyy/MM/dd HH:mm')}"></dd></div>
+          <div><dt>更新日時</dt><dd th:text="${#temporals.format(ticket.updatedAt, 'yyyy/MM/dd HH:mm')}"></dd></div>
+        </dl>
+
+        <hr style="border:none; border-top:1px solid var(--gray-200); margin:1rem 0;"/>
+        <div class="ticket-body" th:text="${ticket.body}"></div>
+      </div>
+
+      <!-- 添付ファイル -->
+      <div class="card" th:if="${!ticket.attachments.isEmpty()}">
+        <h2 class="card-title" style="font-size:15px;">添付ファイル</h2>
+        <div class="attachment-grid">
+          <div class="attachment-item" th:each="att : ${ticket.attachments}">
+            <a th:href="@{/attachments/{id}(id=${att.id})}" target="_blank">
+              <img th:src="@{/attachments/{id}(id=${att.id})}" th:alt="${att.originalName}"
+                   onerror="this.style.display='none'"/>
+            </a>
+            <a th:href="@{/attachments/{id}(id=${att.id})}" target="_blank" th:text="${att.originalName}"></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- コメント -->
+      <div class="card">
+        <h2 class="card-title" style="font-size:15px;">コメント
+          <span th:text="'(' + ${ticket.comments.size()} + '件)'"></span>
+        </h2>
+
+        <ul class="comment-list" th:if="${!ticket.comments.isEmpty()}">
+          <li class="comment-item" th:each="c : ${ticket.comments}">
+            <div class="comment-header">
+              <span class="comment-author" th:text="${c.user.name}"></span>
+              <span th:text="${#temporals.format(c.createdAt, 'yyyy/MM/dd HH:mm')}"></span>
+            </div>
+            <div class="comment-body" th:text="${c.body}"></div>
+          </li>
+        </ul>
+        <p th:if="${ticket.comments.isEmpty()}" style="color:var(--gray-400); font-size:13px;">コメントはありません</p>
+
+        <!-- コメント投稿フォーム -->
+        <form th:action="@{/tickets/{id}/comments(id=${ticket.id})}" method="post" style="margin-top:1rem;">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <div class="form-group">
+            <textarea name="body" class="form-control" rows="3" placeholder="コメントを入力..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">コメントを投稿</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 右カラム: 管理操作・履歴 -->
+    <div>
+      <!-- ステータス変更（管理者のみ） -->
+      <div class="card" sec:authorize="hasRole('ADMIN')">
+        <h2 class="card-title" style="font-size:15px;">ステータス変更</h2>
+        <form th:action="@{/admin/tickets/{id}/status(id=${ticket.id})}" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <div class="form-group">
+            <select name="toStatus" class="form-control">
+              <option value="">選択してください</option>
+              <option th:each="s : ${statuses}" th:value="${s}" th:switch="${s}">
+                <span th:case="'NEW'">新規</span>
+                <span th:case="'IN_PROGRESS'">対応中</span>
+                <span th:case="'RESOLVED'">解決済み</span>
+                <span th:case="'CLOSED'">クローズ</span>
+              </option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" style="width:100%;">変更する</button>
+        </form>
+      </div>
+
+      <!-- ステータス変更履歴 -->
+      <div class="card">
+        <h2 class="card-title" style="font-size:15px;">変更履歴</h2>
+        <ul class="log-list" th:if="${!ticket.statusLogs.isEmpty()}">
+          <li class="log-item" th:each="log : ${ticket.statusLogs}">
+            <div style="flex:1;">
+              <div style="font-size:12px; color:var(--gray-600);"
+                   th:text="${#temporals.format(log.changedAt, 'yyyy/MM/dd HH:mm')}"></div>
+              <div style="font-size:13px;">
+                <span th:text="${log.fromStatus != null ? log.fromStatus : '—'}"></span>
+                <span class="log-arrow">→</span>
+                <strong th:text="${log.toStatus}"></strong>
+              </div>
+              <div style="font-size:12px; color:var(--gray-600);" th:text="${log.changedBy.name}"></div>
+            </div>
+          </li>
+        </ul>
+        <p th:if="${ticket.statusLogs.isEmpty()}" style="color:var(--gray-400); font-size:13px;">変更履歴はありません</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

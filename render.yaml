@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: inquiry-app
+    runtime: java
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -Dspring.profiles.active=prod -jar target/inquiry-app-1.0.0.jar
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        sync: false   # Renderのダッシュボードで手動入力
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="'チケット編集 #' + ${ticketId} + ' - 問い合わせ管理システム'">チケット編集</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <a th:href="@{/tickets}" class="site-title">問い合わせ管理システム</a>
+    <nav class="header-nav">
+      <span class="user-info">
+        <span sec:authentication="principal.displayName"></span>
+        <span class="badge-role" sec:authorize="hasRole('ADMIN')">管理者</span>
+        <span class="badge-role badge-user" sec:authorize="hasRole('USER')">ユーザー</span>
+      </span>
+      <form th:action="@{/logout}" method="post" style="display:inline">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-ghost btn-sm">ログアウト</button>
+      </form>
+    </nav>
+  </div>
+</header>
+
+<main class="main-content">
+  <div style="margin-bottom:.75rem; font-size:13px; color:var(--gray-600);">
+    <a th:href="@{/tickets}" style="color:var(--primary);">チケット一覧</a> &rsaquo;
+    <a th:href="@{/tickets/{id}(id=${ticketId})}" style="color:var(--primary);" th:text="'#' + ${ticketId}"></a>
+    &rsaquo; 編集
+  </div>
+
+  <div class="card" style="max-width:720px;">
+    <h1 class="card-title" th:text="'チケット編集 #' + ${ticketId}">チケット編集</h1>
+
+    <form th:action="@{/tickets/{id}(id=${ticketId})}" method="post" enctype="multipart/form-data" th:object="${form}">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+      <div class="form-group">
+        <label class="form-label">タイトル <span class="required">*</span></label>
+        <input type="text" th:field="*{title}" class="form-control"
+               th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'"
+               placeholder="100文字以内" maxlength="100"/>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">本文 <span class="required">*</span></label>
+        <textarea th:field="*{body}" class="form-control" rows="6"
+                  th:classappend="${#fields.hasErrors('body')} ? 'is-invalid'"></textarea>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">優先度 <span class="required">*</span></label>
+          <select th:field="*{priority}" class="form-control"
+                  th:classappend="${#fields.hasErrors('priority')} ? 'is-invalid'">
+            <option value="">選択してください</option>
+            <option th:each="p : ${priorities}" th:value="${p}" th:text="${p}"></option>
+          </select>
+          <div class="invalid-feedback" th:if="${#fields.hasErrors('priority')}" th:errors="*{priority}"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">カテゴリ</label>
+          <select th:field="*{categoryId}" class="form-control">
+            <option value="">未分類</option>
+            <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"
+                    th:selected="${ticket.categoryName != null and ticket.categoryName == c.name}"></option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 既存添付ファイル -->
+      <div class="form-group" th:if="${ticket.attachments != null and !ticket.attachments.isEmpty()}">
+        <label class="form-label">現在の添付ファイル</label>
+        <div class="attachment-grid">
+          <div class="attachment-item" th:each="att : ${ticket.attachments}">
+            <a th:href="@{/attachments/{id}(id=${att.id})}" target="_blank">
+              <img th:src="@{/attachments/{id}(id=${att.id})}" th:alt="${att.originalName}"
+                   onerror="this.style.display='none'"/>
+            </a>
+            <a th:href="@{/attachments/{id}(id=${att.id})}" target="_blank" th:text="${att.originalName}"></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">ファイルを追加（画像のみ・各5MB）</label>
+        <input type="file" name="attachments" class="form-control" multiple
+               accept="image/png,image/jpeg,image/webp"/>
+      </div>
+
+      <div style="display:flex; gap:.75rem; margin-top:1.5rem;">
+        <button type="submit" class="btn btn-primary">更新する</button>
+        <a th:href="@{/tickets/{id}(id=${ticketId})}" class="btn btn-secondary">キャンセル</a>
+      </div>
+    </form>
+  </div>
+</main>
+
+</body>
+</html>

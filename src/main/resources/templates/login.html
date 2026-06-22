@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ログイン - 問い合わせ管理システム</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="login-title">問い合わせ管理</div>
+
+    <div th:if="${param.error}" class="alert alert-danger">
+      メールアドレスまたはパスワードが正しくありません。
+    </div>
+    <div th:if="${param.logout}" class="alert alert-success">
+      ログアウトしました。
+    </div>
+
+    <form th:action="@{/login}" method="post">
+      <div class="form-group">
+        <label class="form-label" for="email">メールアドレス</label>
+        <input type="email" id="email" name="username" class="form-control"
+               placeholder="example@mail.com" required autofocus/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">パスワード</label>
+        <input type="password" id="password" name="password" class="form-control"
+               placeholder="パスワード" required/>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:.5rem">ログイン</button>
+    </form>
+
+    <div style="margin-top:1.5rem; padding:1rem; background:var(--gray-50); border-radius:6px; font-size:12px; color:var(--gray-600);">
+      <strong>テストアカウント</strong><br/>
+      管理者: admin@example.com<br/>
+      一般ユーザー: user1@example.com / user2@example.com<br/>
+      パスワード（共通）: password123
+    </div>
+  </div>
+</div>
+</body>
+</html>
